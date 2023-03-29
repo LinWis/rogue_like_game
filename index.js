@@ -5,12 +5,31 @@ $(function () {
         x_coordinate = 0;
         y_coordinate = 0;
         health = 100;
-        damage = 5;
+        damage = 10;
 
 
         move() {
-            console.log("move e");
-            game.draw()
+
+            let x_val = getRandomIntInclusive(0, 1);
+            let y_val = getRandomIntInclusive(0, 1);
+
+            if (x_val !== 0 || y_val !== 0) {
+                if (!checkColl(x_val, y_val, this)) {
+                    if (game.field_arr[this.y_coordinate + y_val][this.x_coordinate + x_val] !== 2) {
+                        game.field_arr[this.y_coordinate][this.x_coordinate] = 1;
+                        this.x_coordinate += x_val;
+                        this.y_coordinate += y_val;
+                        game.field_arr[this.y_coordinate][this.x_coordinate] = 5;
+                    }
+
+                    game.draw();
+                    // game.checkCombat();
+                }
+                else {
+                    console.log("not ok");
+                }
+            }
+
         }
     }
 
@@ -19,26 +38,6 @@ $(function () {
         y_coordinate = 0;
         health = 100;
         damage = 10;
-
-        checkColl(x_val, y_val) {
-            if (x_val !== 0) {
-                if (this.x_coordinate + x_val >= game.screen_width || this.x_coordinate + x_val < 0) {
-                    return true
-                }
-                else if (game.field_arr[this.y_coordinate][this.x_coordinate + x_val] === 0) {
-                    return true;
-                }
-            }
-            else {
-                if (this.y_coordinate + y_val > game.screen_height || this.y_coordinate + y_val < 0) {
-                    return true
-                }
-                else if (game.field_arr[this.y_coordinate + y_val][this.x_coordinate] === 0) {
-                    return true;
-                }
-            }
-            return false
-        }
 
         move(key) {
             let x_val = 0;
@@ -60,7 +59,7 @@ $(function () {
                 game.checkCombat(game.enemies, this, true);
             }
             if (x_val !== 0 || y_val !== 0) {
-                if (!this.checkColl(x_val, y_val)) {
+                if (!checkColl(x_val, y_val, this)) {
                     if (game.field_arr[this.y_coordinate + y_val][this.x_coordinate + x_val] === 3) {
                         this.damage += 10;
                     } else if (game.field_arr[this.y_coordinate + y_val][this.x_coordinate + x_val] === 4) {
@@ -141,6 +140,11 @@ $(function () {
             });
 
             setInterval(this.checkCombat, 1000, this.enemies, this.player, false);
+            setInterval(function (enemies) {
+                for (let i = 0; i < enemies.length; ++i) {
+                    enemies[i].move();
+                }
+            }, 1000, this.enemies);
 
         }
 
@@ -266,7 +270,17 @@ $(function () {
                 else {
                     player.health -= enemies_near[i].damage;
                     if (player.health <= 0){
-                        alert("GAME OVER");
+                        // Get a reference to the last interval + 1
+                        const interval_id = window.setInterval(function(){}, Number.MAX_SAFE_INTEGER);
+
+                        // Clear any timeout/interval up to that id
+                        for (let i = 1; i < interval_id; i++) {
+                            window.clearInterval(i);
+                        }
+
+                        $('.wrapper').empty();
+                        $('.wrapper').append('<div class="dieScreen"><h2>Вы умерли!</h2></div>');
+                        combat = false;
                     }
                 }
             }
@@ -320,6 +334,19 @@ $(function () {
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function checkColl(x_val, y_val, creature) {
+        if (creature.x_coordinate + x_val >= game.screen_width || creature.x_coordinate + x_val < 0) {
+            return true
+        }
+        else if (creature.y_coordinate + y_val > game.screen_height || creature.y_coordinate + y_val < 0) {
+            return true
+        }
+        else if (game.field_arr[creature.y_coordinate + y_val][creature.x_coordinate + x_val] === 0) {
+            return true;
+        }
+        return false
     }
 
     let game = new Game();
