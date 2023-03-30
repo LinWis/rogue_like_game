@@ -1,7 +1,6 @@
 $(function () {
 
     class Enemy {
-        id = 0;
         x_coordinate = 0;
         y_coordinate = 0;
         health = 100;
@@ -56,7 +55,7 @@ $(function () {
                 x_val = 1;
             }
             else if (key === 'Space') {
-                game.checkCombat(game.enemies, this, true);
+                checkCombat(game.enemies, this, true);
             }
             if (x_val !== 0 || y_val !== 0) {
                 if (!checkColl(x_val, y_val, this)) {
@@ -81,10 +80,6 @@ $(function () {
                     }
 
                     game.draw();
-                    // game.checkCombat();
-                }
-                else {
-                    console.log("not ok");
                 }
             }
         }
@@ -139,7 +134,7 @@ $(function () {
                 game.player.move(event.code)
             });
 
-            setInterval(this.checkCombat, 1000, this.enemies, this.player, false);
+            setInterval(checkCombat, 1000, this.enemies, this.player, false);
             setInterval(function (enemies) {
                 for (let i = 0; i < enemies.length; ++i) {
                     enemies[i].move();
@@ -150,7 +145,6 @@ $(function () {
 
         generate_enemies() {
             let enemy_num = getRandomIntInclusive(4, 6);
-            let enemy_id = 0;
             while (enemy_num > 0) {
                 let x = getRandomIntInclusive(1, 31);
                 let y = getRandomIntInclusive(1, 15);
@@ -161,12 +155,9 @@ $(function () {
                     let enemy = new Enemy();
                     enemy.x_coordinate = x;
                     enemy.y_coordinate = y;
-                    enemy.id = enemy_id;
 
                     this.enemies.push(enemy);
-
                     enemy_num -= 1;
-                    enemy_id += 1;
                 }
             }
         }
@@ -201,17 +192,13 @@ $(function () {
                     if (this.field_arr[room_coordinate_y_center][room_coordinate_x_center] === 1) {
 
                         let room_coordinate_y = Math.floor(room_coordinate_y_center - (room_height / 2));
-
                         // console.log(room_num, [room_coordinate_x_center, room_coordinate_y_center], [room_width, room_height]);
 
                         while (room_coordinate_y < Math.floor(room_coordinate_y_center + (room_height / 2))) {
-
                             let room_coordinate_x = Math.floor(room_coordinate_x_center - (room_width / 2));
 
                             while (room_coordinate_x < Math.floor(room_coordinate_x_center + (room_width / 2))) {
-
                                 this.field_arr[room_coordinate_y][room_coordinate_x] = 1;
-
                                 room_coordinate_x += 1;
                             }
 
@@ -245,50 +232,6 @@ $(function () {
             }
         }
 
-        checkCombat(enemies, player, isHit) {
-            let enemies_near = []
-            for (let i = 0; i < enemies.length; ++i) {
-                let r = Math.floor(Math.sqrt(Math.pow((enemies[i].x_coordinate - player.x_coordinate), 2) +
-                    Math.pow((enemies[i].y_coordinate - player.y_coordinate), 2)));
-                if (r < 2) {
-                    enemies_near.push(enemies[i]);
-                }
-            }
-
-            let combat = false;
-            for (let i = 0; i < enemies_near.length; ++i) {
-                if (!combat)
-                    combat = !combat;
-
-                if (isHit) {
-                    enemies_near[i].health -= player.damage;
-                    if (enemies_near[i].health <= 0) {
-                        game.enemies.splice(game.enemies.indexOf(enemies_near[i]), 1);
-                        game.field_arr[enemies_near[i].y_coordinate][enemies_near[i].x_coordinate] = 1;
-                    }
-                }
-                else {
-                    player.health -= enemies_near[i].damage;
-                    if (player.health <= 0){
-                        // Get a reference to the last interval + 1
-                        const interval_id = window.setInterval(function(){}, Number.MAX_SAFE_INTEGER);
-
-                        // Clear any timeout/interval up to that id
-                        for (let i = 1; i < interval_id; i++) {
-                            window.clearInterval(i);
-                        }
-
-                        $('.wrapper').empty();
-                        $('.wrapper').append('<div class="dieScreen"><h2>Вы умерли!</h2></div>');
-                        combat = false;
-                    }
-                }
-            }
-
-            if (combat)
-                game.draw();
-        }
-
         draw() {
             $('.wrapper').empty();
             for (let i = 0; i < this.screen_height; ++i) {
@@ -319,7 +262,7 @@ $(function () {
                                 break;
                             }
                         }
-                        let s = `<div id=${enemy_id} class="field tileE"><div class="health" style="width: ${enemy_health}%"></div></div>`
+                        let s = `<div class="field tileE"><div class="health" style="width: ${enemy_health}%"></div></div>`
                         $(".field.wrapper").append(s);
                     }
                 }
@@ -328,6 +271,49 @@ $(function () {
 
         }
 
+    }
+
+    function checkCombat(enemies, player, isHit) {
+        let enemies_near = []
+        for (let i = 0; i < enemies.length; ++i) {
+            let r = Math.floor(Math.sqrt(Math.pow((enemies[i].x_coordinate - player.x_coordinate), 2) +
+                Math.pow((enemies[i].y_coordinate - player.y_coordinate), 2)));
+            if (r < 2) {
+                enemies_near.push(enemies[i]);
+            }
+        }
+
+        let combat = false;
+        for (let i = 0; i < enemies_near.length; ++i) {
+            if (!combat)
+                combat = !combat;
+
+            if (isHit) {
+                enemies_near[i].health -= player.damage;
+                if (enemies_near[i].health <= 0) {
+                    game.enemies.splice(game.enemies.indexOf(enemies_near[i]), 1);
+                    game.field_arr[enemies_near[i].y_coordinate][enemies_near[i].x_coordinate] = 1;
+                }
+            }
+            else {
+                player.health -= enemies_near[i].damage;
+                if (player.health <= 0){
+
+                    const interval_id = window.setInterval(function(){}, Number.MAX_SAFE_INTEGER);
+
+                    for (let i = 1; i < interval_id; i++) {
+                        window.clearInterval(i);
+                    }
+
+                    $('.wrapper').empty();
+                    $('.wrapper').append('<div class="dieScreen"><h2>Вы умерли!</h2></div>');
+                    combat = false;
+                }
+            }
+        }
+
+        if (combat)
+            game.draw();
     }
 
     function getRandomIntInclusive(min, max) {
